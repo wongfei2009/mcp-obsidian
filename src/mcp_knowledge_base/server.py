@@ -4,34 +4,44 @@ import logging
 from collections.abc import Sequence
 from functools import lru_cache
 from typing import Any
-
-import subprocess
+import os
 from dotenv import load_dotenv
 from mcp.server import Server
-import asyncio
 from mcp.types import (
-
+    Resource,
     Tool,
     TextContent,
     ImageContent,
     EmbeddedResource,
-    LoggingLevel
+    LoggingLevel,
 )
-from pydantic import AnyUrl
+from . import obsidian
 
 # Load environment variables
 load_dotenv()
-
-api_key = "x"
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("mcp-knowledge-base")
 
+api_key = os.getenv("OBSIDIAN_API_KEY")
+if not api_key:
+    raise ValueError("OBSIDIAN_API_KEY environment variable required")
+
 app = Server("mcp-knowledge-base")
 
 TOOL_LIST_FILES_IN_VAULT = "list_files_in_vault"
 TOOL_LIST_FILES_IN_DIR = "list_files_in_dir"
+
+@app.list_resources()
+async def list_resources() -> list[Resource]:
+    return [
+        Resource(
+            uri="obisidian:///note/app.log",
+            name="Application Logs",
+            mimeType="text/plain"
+        )
+    ]
 
 @app.list_tools()
 async def list_tools() -> list[Tool]:
@@ -66,20 +76,18 @@ class ToolHandler():
     def __init__(self, tool_name: str):
         self.name = tool_name
 
-    def run_tool(self, args: Any) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
+    def run_tool(self, args: dict) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
         pass
 
 class ListFilesInVaultToolHandler(ToolHandler):
     def __init__(self):
         super().__init__(TOOL_LIST_FILES_IN_VAULT)
 
-    def run_tool(self, args: Any) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
+    def run_tool(self, args: dict) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
 
-        files = [
-            "a.txt",
-            "b.txt",
-            "c/"
-        ]
+        api = obsidian.Obsidian(api_key=api_key)
+
+        files = api.list_files_in_vault()
 
         return [
             TextContent(
@@ -92,13 +100,14 @@ class ListFilesInDirToolHandler(ToolHandler):
     def __init__(self):
         super().__init__(TOOL_LIST_FILES_IN_DIR)
 
-    def run_tool(self, args: Any) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
+    def run_tool(self, args: dict) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
 
-        files = [
-            "a.txt",
-            "b.txt",
-            "c/"
-        ]
+        if "dirpath" not in args:
+            raise RuntimeError("dirpath argument missing in arguments")
+
+        api = obsidian.Obsidian(api_key=api_key)
+
+        files = api.list_files_in_dir(args["dirpath"])
 
         return [
             TextContent(
@@ -120,12 +129,14 @@ def get_tool_handler(name: str) -> ToolHandler | None:
     return tool_handlers[name]
 
 @app.call_tool()
-async def call_tool(name: str, arguments: Any) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
+async def call_tool(name: str, arguments: Any) -> Sequence[TextContent]:
     """Handle tool calls for command line run."""
     
+    if not isinstance(arguments, dict):
+        raise RuntimeError("arguments must be dictionary")
+
     add_tool_handler(ListFilesInDirToolHandler())
     add_tool_handler(ListFilesInVaultToolHandler())
-
 
     tool_handler = get_tool_handler(name)
     if not tool_handler:
@@ -134,8 +145,8 @@ async def call_tool(name: str, arguments: Any) -> Sequence[TextContent | ImageCo
     try:
         return tool_handler.run_tool(arguments)
     except Exception as e:
-        logger.error(f"Error: {str(e)}")
-        raise RuntimeError(f"Error: {str(e)}")
+        logger.error(str(e))
+        raise RuntimeError(f"Caught Exception. Error: {str(e)}")
 
 
 async def main():
