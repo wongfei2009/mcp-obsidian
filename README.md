@@ -19,10 +19,10 @@ The server implements multiple tools to interact with Obsidian:
 
 Its good to first instruct Claude to use Obsidian. Then it will always call the tool.
 
-- List all files in my vault
-- List all files in the XYZ directory
+The use prompts like this:
 - Get the contents of the last architecture call note and summarize them
 - Search for all files where Azure CosmosDb is mentioned and quickly explain to me the context in which it is mentioned
+- Summarize the last meeting notes and put them into a new note 'summary meeting.md'. Add an introduction so that I can send it via email.
 
 ## Configuration
 
