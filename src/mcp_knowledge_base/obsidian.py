@@ -58,3 +58,14 @@ class Obsidian():
             return response.json()['files']
 
         return self._safe_call(call_fn)
+
+    def get_file_contents(self, filepath: str) -> Any:
+        url = f"{self.get_base_url()}/vault/{filepath}"
+    
+        def call_fn():
+            response = requests.get(url, headers=self._get_headers(), verify=self.verify_ssl)
+            response.raise_for_status()
+            
+            return response.text
+
+        return self._safe_call(call_fn)

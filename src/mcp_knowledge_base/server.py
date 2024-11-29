@@ -15,10 +15,12 @@ from mcp.types import (
     EmbeddedResource,
     LoggingLevel,
 )
-from . import obsidian
+
+load_dotenv()
+
+from . import tools
 
 # Load environment variables
-load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -30,8 +32,20 @@ if not api_key:
 
 app = Server("mcp-knowledge-base")
 
-TOOL_LIST_FILES_IN_VAULT = "list_files_in_vault"
-TOOL_LIST_FILES_IN_DIR = "list_files_in_dir"
+tool_handlers = {}
+def add_tool_handler(tool_class: tools.ToolHandler):
+    global tool_handlers
+
+    tool_handlers[tool_class.name] = tool_class
+
+def get_tool_handler(name: str) -> tools.ToolHandler | None:
+    if name not in tool_handlers:
+        return None
+    
+    return tool_handlers[name]
+
+add_tool_handler(tools.ListFilesInDirToolHandler())
+add_tool_handler(tools.ListFilesInVaultToolHandler())
 
 @app.list_resources()
 async def list_resources() -> list[Resource]:
@@ -46,87 +60,8 @@ async def list_resources() -> list[Resource]:
 @app.list_tools()
 async def list_tools() -> list[Tool]:
     """List available tools."""
-    return [
-        Tool(
-            name="list_files_in_vault",
-            description="Lists all files and directories in the root directory of your Obsidian vault.",
-            inputSchema={
-                "type": "object",
-                "properties": {},
-                "required": []
-            },
-        ),
-        Tool(
-            name="list_files_in_dir",
-            description="Lists all files and directories that exist in a specific Obsidian directory.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "dirpath": {
-                        "type": "string",
-                        "description": "Path to list files from (relative to your vault root). Note that empty directories will not be returned."
-                    },
-                },
-                "required": ["dirpath"]
-            }
-        )
-    ]
 
-class ToolHandler():
-    def __init__(self, tool_name: str):
-        self.name = tool_name
-
-    def run_tool(self, args: dict) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
-        pass
-
-class ListFilesInVaultToolHandler(ToolHandler):
-    def __init__(self):
-        super().__init__(TOOL_LIST_FILES_IN_VAULT)
-
-    def run_tool(self, args: dict) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
-
-        api = obsidian.Obsidian(api_key=api_key)
-
-        files = api.list_files_in_vault()
-
-        return [
-            TextContent(
-                type="text",
-                text=json.dumps(files, indent=2)
-            )
-        ]
-    
-class ListFilesInDirToolHandler(ToolHandler):
-    def __init__(self):
-        super().__init__(TOOL_LIST_FILES_IN_DIR)
-
-    def run_tool(self, args: dict) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
-
-        if "dirpath" not in args:
-            raise RuntimeError("dirpath argument missing in arguments")
-
-        api = obsidian.Obsidian(api_key=api_key)
-
-        files = api.list_files_in_dir(args["dirpath"])
-
-        return [
-            TextContent(
-                type="text",
-                text=json.dumps(files, indent=2)
-            )
-        ]
-    
-tool_handlers = {}
-def add_tool_handler(tool_class: ToolHandler):
-    global tool_handlers
-
-    tool_handlers[tool_class.name] = tool_class
-
-def get_tool_handler(name: str) -> ToolHandler | None:
-    if name not in tool_handlers:
-        return None
-    
-    return tool_handlers[name]
+    return [th.get_tool_description() for th in tool_handlers.values()]
 
 @app.call_tool()
 async def call_tool(name: str, arguments: Any) -> Sequence[TextContent]:
@@ -135,8 +70,6 @@ async def call_tool(name: str, arguments: Any) -> Sequence[TextContent]:
     if not isinstance(arguments, dict):
         raise RuntimeError("arguments must be dictionary")
 
-    add_tool_handler(ListFilesInDirToolHandler())
-    add_tool_handler(ListFilesInVaultToolHandler())
 
     tool_handler = get_tool_handler(name)
     if not tool_handler:
