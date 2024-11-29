@@ -129,18 +129,19 @@ class GetFileContentsToolHandler(ToolHandler):
     
 class SearchToolHandler(ToolHandler):
     def __init__(self):
-        super().__init__("search")
+        super().__init__("simple_search")
 
     def get_tool_description(self):
         return Tool(
             name=self.name,
-            description="Search for documents matching a specified text query across all files in the vault",
+            description="""Simple search for documents matching a specified text query across all files in the vault. 
+            Use this tool when you want to do a simple text search""",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "Text to search for in the vault"
+                        "description": "Text to a simple search for in the vault."
                     },
                     "context_length": {
                         "type": "integer",
@@ -284,5 +285,43 @@ class PatchContentToolHandler(ToolHandler):
            TextContent(
                type="text",
                text=f"Successfully patched content in {args['filepath']}"
+           )
+       ]
+   
+class ComplexSearchToolHandler(ToolHandler):
+   def __init__(self):
+       super().__init__("complex_search")
+
+   def get_tool_description(self):
+       return Tool(
+           name=self.name,
+           description="""Complex search for documents using a JsonLogic query. 
+           Supports standard JsonLogic operators plus 'glob' and 'regexp' for pattern matching. Results must be non-falsy.
+
+           Use this tool when you want to do a complex search, e.g. for all documents with certain tags etc.
+           """,
+           inputSchema={
+               "type": "object",
+               "properties": {
+                   "query": {
+                       "type": "object",
+                       "description": "JsonLogic query object. Example: {\"glob\": [\"*.md\", {\"var\": \"path\"}]} matches all markdown files"
+                   }
+               },
+               "required": ["query"]
+           }
+       )
+
+   def run_tool(self, args: dict) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
+       if "query" not in args:
+           raise RuntimeError("query argument missing in arguments")
+
+       api = obsidian.Obsidian(api_key=api_key)
+       results = api.search_json(args["query"])
+
+       return [
+           TextContent(
+               type="text",
+               text=json.dumps(results, indent=2)
            )
        ]

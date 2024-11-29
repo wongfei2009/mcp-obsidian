@@ -50,6 +50,7 @@ add_tool_handler(tools.GetFileContentsToolHandler())
 add_tool_handler(tools.SearchToolHandler())
 add_tool_handler(tools.PatchContentToolHandler())
 add_tool_handler(tools.AppendContentToolHandler())
+add_tool_handler(tools.ComplexSearchToolHandler())
 
 #@app.list_resources()
 #async def list_resources() -> list[Resource]:

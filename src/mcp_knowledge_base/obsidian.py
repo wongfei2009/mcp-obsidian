@@ -115,3 +115,17 @@ class Obsidian():
             return None
 
         return self._safe_call(call_fn)
+    
+    def search_json(self, query: dict) -> Any:
+        url = f"{self.get_base_url()}/search/"
+        
+        headers = self._get_headers() | {
+            'Content-Type': 'application/vnd.olrapi.jsonlogic+json'
+        }
+        
+        def call_fn():
+            response = requests.post(url, headers=headers, json=query, verify=self.verify_ssl)
+            response.raise_for_status()
+            return response.json()
+
+        return self._safe_call(call_fn)
