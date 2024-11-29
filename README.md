@@ -1,18 +1,35 @@
 # mcp-knowledge-base MCP server
 
-Example MCP server to call command line apps
+Example MCP server to interact with Obsidian vaults.
 
 ## Components
 
 ### Tools
 
-The server implements one tool:
-- run_command: Runs a command line comment
-  - Takes "cmd" and "args" as string arguments
-  - Runs the command and returns stdout, stderr, status_code, etc.
+The server implements two tools:
+- list_files_in_vault: Lists all files and directories in the root directory of your Obsidian vault
+  - Takes no arguments
+  - Returns a JSON list of files and directories
+- list_files_in_dir: Lists all files and directories in a specific Obsidian directory
+  - Takes "dirpath" as a string argument
+  - Returns a JSON list of files and directories in the specified path
+
+### Example prompts
+
+- List all files in my vault
+- List all files in the XYZ directory
 
 ## Configuration
 
+### Environment Variables
+
+Create a `.env` file in the root directory with the following required variable:
+
+```
+OBSIDIAN_API_KEY=your_api_key_here
+```
+
+Without this API key, the server will not be able to function.
 
 ## Quickstart
 
@@ -25,24 +42,29 @@ On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
 
 <details>
   <summary>Development/Unpublished Servers Configuration</summary>
-  ```
+  
+```json
+{
   "mcpServers": {
     "mcp-knowledge-base": {
       "command": "uv",
       "args": [
         "--directory",
-        "/Users/$(whoami)/experiments/claude-mvp/mcp-knowledge-base",
+        "<dir_to>/mcp-knowledge-base",
         "run",
         "mcp-knowledge-base"
       ]
     }
   }
-  ```
+}
+```
 </details>
 
 <details>
   <summary>Published Servers Configuration</summary>
-  ```
+  
+```json
+{
   "mcpServers": {
     "mcp-knowledge-base": {
       "command": "uvx",
@@ -51,7 +73,8 @@ On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
       ]
     }
   }
-  ```
+}
+```
 </details>
 
 ## Development
@@ -86,12 +109,16 @@ Note: You'll need to set PyPI credentials via environment variables or command f
 Since MCP servers run over stdio, debugging can be challenging. For the best debugging
 experience, we strongly recommend using the [MCP Inspector](https://github.com/modelcontextprotocol/inspector).
 
-
 You can launch the MCP Inspector via [`npm`](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) with this command:
 
 ```bash
-npx @modelcontextprotocol/inspector uv --directory /Users/markus/experiments/claude-mvp/mcp-knowledge-base run mcp-knowledge-base
+npx @modelcontextprotocol/inspector uv --directory /path/to/mcp-knowledge-base run mcp-knowledge-base
 ```
 
-
 Upon launching, the Inspector will display a URL that you can access in your browser to begin debugging.
+
+You can also watch the server logs with this command:
+
+```bash
+tail -n 20 -f ~/Library/Logs/Claude/mcp-server-mcp-knowledge-base.log
+```
