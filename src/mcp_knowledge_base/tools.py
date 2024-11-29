@@ -126,3 +126,163 @@ class GetFileContentsToolHandler(ToolHandler):
                 text=json.dumps(content, indent=2)
             )
         ]
+    
+class SearchToolHandler(ToolHandler):
+    def __init__(self):
+        super().__init__("search")
+
+    def get_tool_description(self):
+        return Tool(
+            name=self.name,
+            description="Search for documents matching a specified text query across all files in the vault",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Text to search for in the vault"
+                    },
+                    "context_length": {
+                        "type": "integer",
+                        "description": "How much context to return around the matching string (default: 100)",
+                        "default": 100
+                    }
+                },
+                "required": ["query"]
+            }
+        )
+
+    def run_tool(self, args: dict) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
+        if "query" not in args:
+            raise RuntimeError("query argument missing in arguments")
+
+        context_length = args.get("context_length", 100)
+        
+        api = obsidian.Obsidian(api_key=api_key)
+        results = api.search(args["query"], context_length)
+        
+        formatted_results = []
+        for result in results:
+            formatted_matches = []
+            for match in result.get('matches', []):
+                context = match.get('context', '')
+                match_pos = match.get('match', {})
+                start = match_pos.get('start', 0)
+                end = match_pos.get('end', 0)
+                
+                formatted_matches.append({
+                    'context': context,
+                    'match_position': {'start': start, 'end': end}
+                })
+                
+            formatted_results.append({
+                'filename': result.get('filename', ''),
+                'score': result.get('score', 0),
+                'matches': formatted_matches
+            })
+
+        return [
+            TextContent(
+                type="text",
+                text=json.dumps(formatted_results, indent=2)
+            )
+        ]
+    
+class AppendContentToolHandler(ToolHandler):
+   def __init__(self):
+       super().__init__("append_content")
+
+   def get_tool_description(self):
+       return Tool(
+           name=self.name,
+           description="Append content to a new or existing file in the vault.",
+           inputSchema={
+               "type": "object",
+               "properties": {
+                   "filepath": {
+                       "type": "string",
+                       "description": "Path to the file (relative to vault root)",
+                       "format": "path"
+                   },
+                   "content": {
+                       "type": "string",
+                       "description": "Content to append to the file"
+                   }
+               },
+               "required": ["filepath", "content"]
+           }
+       )
+
+   def run_tool(self, args: dict) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
+       if "filepath" not in args or "content" not in args:
+           raise RuntimeError("filepath and content arguments required")
+
+       api = obsidian.Obsidian(api_key=api_key)
+       api.append_content(args["filepath"], args["content"])
+
+       return [
+           TextContent(
+               type="text",
+               text=f"Successfully appended content to {args['filepath']}"
+           )
+       ]
+   
+class PatchContentToolHandler(ToolHandler):
+   def __init__(self):
+       super().__init__("patch_content")
+
+   def get_tool_description(self):
+       return Tool(
+           name=self.name,
+           description="Insert content into an existing note relative to a heading, block reference, or frontmatter field.",
+           inputSchema={
+               "type": "object",
+               "properties": {
+                   "filepath": {
+                       "type": "string",
+                       "description": "Path to the file (relative to vault root)",
+                       "format": "path"
+                   },
+                   "operation": {
+                       "type": "string",
+                       "description": "Operation to perform (append, prepend, or replace)",
+                       "enum": ["append", "prepend", "replace"]
+                   },
+                   "target_type": {
+                       "type": "string",
+                       "description": "Type of target to patch",
+                       "enum": ["heading", "block", "frontmatter"]
+                   },
+                   "target": {
+                       "type": "string", 
+                       "description": "Target identifier (heading path, block reference, or frontmatter field)"
+                   },
+                   "content": {
+                       "type": "string",
+                       "description": "Content to insert"
+                   }
+               },
+               "required": ["filepath", "operation", "target_type", "target", "content"]
+           }
+       )
+
+   def run_tool(self, args: dict) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
+       required = ["filepath", "operation", "target_type", "target", "content"]
+       if not all(key in args for key in required):
+           raise RuntimeError(f"Missing required arguments: {', '.join(required)}")
+
+       api = obsidian.Obsidian(api_key=api_key)
+       api.patch_content(
+           args["filepath"],
+           args["operation"],
+           args["target_type"],
+           args["target"],
+           args["content"]
+       )
+
+       return [
+           TextContent(
+               type="text",
+               text=f"Successfully patched content in {args['filepath']}"
+           )
+       ]

@@ -69,3 +69,49 @@ class Obsidian():
             return response.text
 
         return self._safe_call(call_fn)
+    
+    def search(self, query: str, context_length: int = 100) -> Any:
+        url = f"{self.get_base_url()}/search/simple/"
+        params = {
+            'query': query,
+            'contextLength': context_length
+        }
+        
+        def call_fn():
+            response = requests.post(url, headers=self._get_headers(), params=params, verify=self.verify_ssl)
+            response.raise_for_status()
+            return response.json()
+
+        return self._safe_call(call_fn)
+    
+    def append_content(self, filepath: str, content: str) -> Any:
+        url = f"{self.get_base_url()}/vault/{filepath}"
+        
+        def call_fn():
+            response = requests.post(
+                url, 
+                headers=self._get_headers() | {'Content-Type': 'text/markdown'}, 
+                data=content,
+                verify=self.verify_ssl
+            )
+            response.raise_for_status()
+            return None
+
+        return self._safe_call(call_fn)
+    
+    def patch_content(self, filepath: str, operation: str, target_type: str, target: str, content: str) -> Any:
+        url = f"{self.get_base_url()}/vault/{filepath}"
+        
+        headers = self._get_headers() | {
+            'Content-Type': 'text/markdown',
+            'Operation': operation,
+            'Target-Type': target_type,
+            'Target': target
+        }
+        
+        def call_fn():
+            response = requests.patch(url, headers=headers, data=content, verify=self.verify_ssl)
+            response.raise_for_status()
+            return None
+
+        return self._safe_call(call_fn)
