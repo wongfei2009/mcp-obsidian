@@ -1,26 +1,27 @@
 # mcp-knowledge-base MCP server
 
-Example MCP server to interact with Obsidian vaults.
+Example MCP server to interact with Obsidian.
 
 ## Components
 
 ### Tools
 
-The server implements two tools:
+The server implements multiple tools to interact with Obsidian:
 - list_files_in_vault: Lists all files and directories in the root directory of your Obsidian vault
-  - Takes no arguments
-  - Returns a JSON list of files and directories
 - list_files_in_dir: Lists all files and directories in a specific Obsidian directory
-  - Takes "dirpath" as a string argument
-  - Returns a JSON list of files and directories in the specified path
+- get_file_contents: Return the content of a single file in your vault.
 
 ### Example prompts
 
+Its good to first instruct Claude to use Obsidian. Then it will always call the tool.
+
 - List all files in my vault
 - List all files in the XYZ directory
-- Get the contents of the last architecture call note
+- Get the contents of the last architecture call note and summarize them
 
 ## Configuration
+
+
 
 ### Environment Variables
 
@@ -35,6 +36,12 @@ Without this API key, the server will not be able to function.
 ## Quickstart
 
 ### Install
+
+#### Obsidian REST API
+
+You need the Obsidian REST API community plugin running: https://github.com/coddingtonbear/obsidian-local-rest-api
+
+Install and enable it in the settings and copy the api key.
 
 #### Claude Desktop
 
