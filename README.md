@@ -18,6 +18,7 @@ The server implements two tools:
 
 - List all files in my vault
 - List all files in the XYZ directory
+- Get the contents of the last architecture call note
 
 ## Configuration
 

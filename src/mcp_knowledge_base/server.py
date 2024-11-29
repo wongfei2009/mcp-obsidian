@@ -46,16 +46,17 @@ def get_tool_handler(name: str) -> tools.ToolHandler | None:
 
 add_tool_handler(tools.ListFilesInDirToolHandler())
 add_tool_handler(tools.ListFilesInVaultToolHandler())
+add_tool_handler(tools.GetFileContentsToolHandler())
 
-@app.list_resources()
-async def list_resources() -> list[Resource]:
-    return [
-        Resource(
-            uri="obisidian:///note/app.log",
-            name="Application Logs",
-            mimeType="text/plain"
-        )
-    ]
+#@app.list_resources()
+#async def list_resources() -> list[Resource]:
+#    return [
+#        Resource(
+#            uri="obisidian:///note/app.log",
+#            name="Application Logs",
+#            mimeType="text/plain"
+#        )
+#    ]
 
 @app.list_tools()
 async def list_tools() -> list[Tool]:

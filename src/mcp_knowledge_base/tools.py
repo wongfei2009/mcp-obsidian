@@ -90,3 +90,39 @@ class ListFilesInDirToolHandler(ToolHandler):
                 text=json.dumps(files, indent=2)
             )
         ]
+    
+class GetFileContentsToolHandler(ToolHandler):
+    def __init__(self):
+        super().__init__("get_file_contents")
+
+    def get_tool_description(self):
+        return Tool(
+            name=self.name,
+            description="Return the content of a single file in your vault.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "filepath": {
+                        "type": "string",
+                        "description": "Path to the relevant file (relative to your vault root).",
+                        "format": "path"
+                    },
+                },
+                "required": ["filepath"]
+            }
+        )
+
+    def run_tool(self, args: dict) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
+        if "filepath" not in args:
+            raise RuntimeError("filepath argument missing in arguments")
+
+        api = obsidian.Obsidian(api_key=api_key)
+
+        content = api.get_file_contents(args["filepath"])
+
+        return [
+            TextContent(
+                type="text",
+                text=json.dumps(content, indent=2)
+            )
+        ]
