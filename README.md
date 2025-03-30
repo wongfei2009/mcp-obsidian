@@ -6,25 +6,49 @@ MCP server to interact with Obsidian via the Local REST API community plugin.
 
 ## Components
 
+> **Note about naming convention**: All tools in this MCP server use the "obsidian_" prefix (e.g., "obsidian_get_file_contents" instead of just "get_file_contents"). This naming convention helps prevent conflicts when multiple MCP servers are used simultaneously in Claude for Desktop.
+
 ### Tools
 
-The server implements multiple tools to interact with Obsidian:
+The server implements multiple tools to interact with Obsidian. All tools use the "obsidian_" prefix to avoid naming conflicts with other MCP servers.
 
-- list_files_in_vault: Lists all files and directories in the root directory of your Obsidian vault
-- list_files_in_dir: Lists all files and directories in a specific Obsidian directory
-- get_file_contents: Return the content of a single file in your vault.
-- search: Search for documents matching a specified text query across all files in the vault
-- patch_content: Insert content into an existing note relative to a heading, block reference, or frontmatter field.
-- append_content: Append content to a new or existing file in the vault.
+#### File Navigation & Content Access
+- **obsidian_list_files_in_vault**: Lists all files and directories at the root level of your Obsidian vault.
+- **obsidian_list_files_in_dir**: Lists all files and directories within a specific folder in your vault.
+- **obsidian_get_file_contents**: Retrieves the complete content of a specific file from your vault.
+- **obsidian_batch_get_file_contents**: Retrieves multiple files at once and returns them with section headers.
 
-### Example prompts
+#### Search Capabilities
+- **obsidian_simple_search**: Performs a basic text search across all files and returns matches with context.
+- **obsidian_complex_search**: Executes advanced searches using JsonLogic queries for finding notes with specific tags, metadata, or file patterns.
 
-Its good to first instruct Claude to use Obsidian. Then it will always call the tool.
+#### Content Creation & Editing
+- **obsidian_append_content**: Adds new content to the end of an existing note or creates a new note.
+- **obsidian_patch_content**: Precisely modifies specific sections of a note based on headings, blocks, or frontmatter.
 
-The use prompts like this:
-- Get the contents of the last architecture call note and summarize them
-- Search for all files where Azure CosmosDb is mentioned and quickly explain to me the context in which it is mentioned
-- Summarize the last meeting notes and put them into a new note 'summary meeting.md'. Add an introduction so that I can send it via email.
+#### Periodic Notes Integration
+- **obsidian_get_periodic_note**: Retrieves the current time period's note (today's daily note, this week's note, etc.).
+- **obsidian_get_recent_periodic_notes**: Gets a list of your most recent daily/weekly/monthly notes.
+- **obsidian_get_recent_changes**: Lists recently modified files in your vault, sorted by modification date.
+
+### Example Prompts for Claude
+
+To get the best results, start by letting Claude know you want to work with your Obsidian vault. Here are some effective prompt examples:
+
+#### Information Retrieval
+- "Please check my Obsidian vault and retrieve my latest meeting notes from this week. Summarize the key action items."
+- "Search my Obsidian notes for any mentions of 'project roadmap' and tell me where it's discussed."
+- "Find all my personal development notes that contain goal-setting frameworks and summarize the different approaches."
+
+#### Content Creation
+- "Review my recent daily notes from this week, extract any tasks or TODOs, and create a new weekly summary note called 'Weekly Summary.md'."
+- "Please create a new project note in my Projects folder that outlines the key points from our discussion today."
+- "Take the ideas from my 'Book Notes/Atomic Habits.md' file and create a practical implementation plan in a new note."
+
+#### Analysis & Organization
+- "Look at my recent meeting notes and extract all decisions made about the product launch timeline."
+- "Check my research notes on machine learning and create a structured outline grouping similar concepts together."
+- "Find all notes in my vault containing #project-alpha tag and create a status report based on recent updates."
 
 ## Configuration
 

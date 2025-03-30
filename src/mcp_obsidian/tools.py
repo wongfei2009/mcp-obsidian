@@ -15,6 +15,15 @@ if api_key == "":
 
 TOOL_LIST_FILES_IN_VAULT = "obsidian_list_files_in_vault"
 TOOL_LIST_FILES_IN_DIR = "obsidian_list_files_in_dir"
+TOOL_GET_FILE_CONTENTS = "obsidian_get_file_contents"
+TOOL_SIMPLE_SEARCH = "obsidian_simple_search"
+TOOL_APPEND_CONTENT = "obsidian_append_content"
+TOOL_PATCH_CONTENT = "obsidian_patch_content"
+TOOL_COMPLEX_SEARCH = "obsidian_complex_search"
+TOOL_BATCH_GET_FILE_CONTENTS = "obsidian_batch_get_file_contents"
+TOOL_GET_PERIODIC_NOTE = "obsidian_get_periodic_note"
+TOOL_GET_RECENT_PERIODIC_NOTES = "obsidian_get_recent_periodic_notes"
+TOOL_GET_RECENT_CHANGES = "obsidian_get_recent_changes"
 
 class ToolHandler():
     def __init__(self, tool_name: str):
@@ -33,7 +42,7 @@ class ListFilesInVaultToolHandler(ToolHandler):
     def get_tool_description(self):
         return Tool(
             name=self.name,
-            description="Lists all files and directories in the root directory of your Obsidian vault.",
+            description="Lists all files and directories at the root level of your Obsidian vault. This provides an overview of your vault's top-level organization without requiring any parameters.",
             inputSchema={
                 "type": "object",
                 "properties": {},
@@ -61,13 +70,13 @@ class ListFilesInDirToolHandler(ToolHandler):
     def get_tool_description(self):
         return Tool(
             name=self.name,
-            description="Lists all files and directories that exist in a specific Obsidian directory.",
+            description="Lists all files and directories within a specific folder in your Obsidian vault. Use this when you need to explore the contents of a particular directory rather than the root level.",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "dirpath": {
                         "type": "string",
-                        "description": "Path to list files from (relative to your vault root). Note that empty directories will not be returned."
+                        "description": "Path to the directory you want to explore (relative to your vault root, e.g., 'Projects' or 'Daily Notes'). Note that empty directories will not be returned."
                     },
                 },
                 "required": ["dirpath"]
@@ -92,18 +101,18 @@ class ListFilesInDirToolHandler(ToolHandler):
     
 class GetFileContentsToolHandler(ToolHandler):
     def __init__(self):
-        super().__init__("obsidian_get_file_contents")
+        super().__init__(TOOL_GET_FILE_CONTENTS)
 
     def get_tool_description(self):
         return Tool(
             name=self.name,
-            description="Return the content of a single file in your vault.",
+            description="Retrieves the complete content of a specific file from your Obsidian vault. Use this tool when you need to access or analyze the full text of a note.",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "filepath": {
                         "type": "string",
-                        "description": "Path to the relevant file (relative to your vault root).",
+                        "description": "Path to the file you want to read (relative to your vault root, e.g., 'Projects/project-ideas.md' or 'Meeting Notes/2023-05-15.md').",
                         "format": "path"
                     },
                 },
@@ -128,23 +137,23 @@ class GetFileContentsToolHandler(ToolHandler):
     
 class SearchToolHandler(ToolHandler):
     def __init__(self):
-        super().__init__("obsidian_simple_search")
+        super().__init__(TOOL_SIMPLE_SEARCH)
 
     def get_tool_description(self):
         return Tool(
             name=self.name,
-            description="""Simple search for documents matching a specified text query across all files in the vault. 
-            Use this tool when you want to do a simple text search""",
+            description="""Performs a text-based search across all files in your Obsidian vault and returns matches with surrounding context.
+            Use this tool when you need to find specific information, keywords, or phrases anywhere in your notes without complex search criteria.""",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "Text to a simple search for in the vault."
+                        "description": "The text to search for in your vault (e.g., 'project ideas', 'meeting with John', or 'productivity techniques')."
                     },
                     "context_length": {
                         "type": "integer",
-                        "description": "How much context to return around the matching string (default: 100)",
+                        "description": "How many characters of surrounding text to include around each match to provide context (default: 100).",
                         "default": 100
                     }
                 },
@@ -190,23 +199,23 @@ class SearchToolHandler(ToolHandler):
     
 class AppendContentToolHandler(ToolHandler):
    def __init__(self):
-       super().__init__("obsidian_append_content")
+       super().__init__(TOOL_APPEND_CONTENT)
 
    def get_tool_description(self):
        return Tool(
            name=self.name,
-           description="Append content to a new or existing file in the vault.",
+           description="Adds new content to the end of an existing note, or creates a new note if the file doesn't exist yet. This is useful for adding information to notes without modifying existing content.",
            inputSchema={
                "type": "object",
                "properties": {
                    "filepath": {
                        "type": "string",
-                       "description": "Path to the file (relative to vault root)",
+                       "description": "Path to the file you want to append to (relative to vault root, e.g., 'Daily Notes/today.md' or 'Projects/ideas.md')",
                        "format": "path"
                    },
                    "content": {
                        "type": "string",
-                       "description": "Content to append to the file"
+                       "description": "The text content you want to add to the end of the file (can include markdown formatting)"
                    }
                },
                "required": ["filepath", "content"]
@@ -229,37 +238,37 @@ class AppendContentToolHandler(ToolHandler):
    
 class PatchContentToolHandler(ToolHandler):
    def __init__(self):
-       super().__init__("obsidian_patch_content")
+       super().__init__(TOOL_PATCH_CONTENT)
 
    def get_tool_description(self):
        return Tool(
            name=self.name,
-           description="Insert content into an existing note relative to a heading, block reference, or frontmatter field.",
+           description="Precisely modifies a specific section of an existing note by inserting, adding to, or replacing content relative to a heading, block reference, or frontmatter field. Use this for targeted edits to specific parts of a note rather than appending to the end.",
            inputSchema={
                "type": "object",
                "properties": {
                    "filepath": {
                        "type": "string",
-                       "description": "Path to the file (relative to vault root)",
+                       "description": "Path to the file you want to modify (relative to vault root, e.g., 'Projects/project-plan.md')",
                        "format": "path"
                    },
                    "operation": {
                        "type": "string",
-                       "description": "Operation to perform (append, prepend, or replace)",
+                       "description": "The type of modification to perform: 'append' (add after target), 'prepend' (add before target), or 'replace' (replace target with new content)",
                        "enum": ["append", "prepend", "replace"]
                    },
                    "target_type": {
                        "type": "string",
-                       "description": "Type of target to patch",
+                       "description": "What type of element you're targeting: 'heading' (a section heading), 'block' (a block reference), or 'frontmatter' (YAML metadata field)",
                        "enum": ["heading", "block", "frontmatter"]
                    },
                    "target": {
                        "type": "string", 
-                       "description": "Target identifier (heading path, block reference, or frontmatter field)"
+                       "description": "The specific target identifier: for headings use the heading text (e.g., '## Project Goals'), for blocks use the block ID, for frontmatter use the field name"
                    },
                    "content": {
                        "type": "string",
-                       "description": "Content to insert"
+                       "description": "The new content to insert (can include markdown formatting)"
                    }
                },
                "required": ["filepath", "operation", "target_type", "target", "content"]
@@ -289,22 +298,27 @@ class PatchContentToolHandler(ToolHandler):
    
 class ComplexSearchToolHandler(ToolHandler):
    def __init__(self):
-       super().__init__("obsidian_complex_search")
+       super().__init__(TOOL_COMPLEX_SEARCH)
 
    def get_tool_description(self):
        return Tool(
            name=self.name,
-           description="""Complex search for documents using a JsonLogic query. 
-           Supports standard JsonLogic operators plus 'glob' and 'regexp' for pattern matching. Results must be non-falsy.
-
-           Use this tool when you want to do a complex search, e.g. for all documents with certain tags etc.
+           description="""Advanced search functionality using structured JsonLogic queries to find notes that match specific criteria.
+           
+           Use this tool when you need to perform more sophisticated searches than simple text matching, such as finding:
+           - Notes with specific tags or YAML frontmatter values
+           - Files matching specific patterns or in specific locations
+           - Content that matches regular expressions
+           - Combinations of criteria using AND/OR logic
+           
+           This is more powerful but complex than the simple search tool.
            """,
            inputSchema={
                "type": "object",
                "properties": {
                    "query": {
                        "type": "object",
-                       "description": "JsonLogic query object. Example: {\"glob\": [\"*.md\", {\"var\": \"path\"}]} matches all markdown files"
+                       "description": "JsonLogic query object specifying search criteria. Examples: \n- Find all markdown files: {\"glob\": [\"*.md\", {\"var\": \"path\"}]}\n- Find files with specific tag: {\"in\": [\"productivity\", {\"var\": \"tags\"}]}\n- Find files modified recently: {\">\": [{\"var\": \"mtime\"}, 1672531200000]}"
                    }
                },
                "required": ["query"]
@@ -327,12 +341,12 @@ class ComplexSearchToolHandler(ToolHandler):
 
 class BatchGetFileContentsToolHandler(ToolHandler):
     def __init__(self):
-        super().__init__("obsidian_batch_get_file_contents")
+        super().__init__(TOOL_BATCH_GET_FILE_CONTENTS)
 
     def get_tool_description(self):
         return Tool(
             name=self.name,
-            description="Return the contents of multiple files in your vault, concatenated with headers.",
+            description="Retrieves the contents of multiple files at once from your Obsidian vault and returns them together with clear section headers. Use this when you need to analyze or compare information across several notes simultaneously.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -340,10 +354,10 @@ class BatchGetFileContentsToolHandler(ToolHandler):
                         "type": "array",
                         "items": {
                             "type": "string",
-                            "description": "Path to a file (relative to your vault root)",
+                            "description": "Path to a file (relative to your vault root, e.g., 'Meeting Notes/2023-05-15.md')",
                             "format": "path"
                         },
-                        "description": "List of file paths to read"
+                        "description": "List of file paths you want to retrieve (e.g., ['Projects/project1.md', 'Projects/project2.md'])"
                     },
                 },
                 "required": ["filepaths"]
@@ -366,18 +380,18 @@ class BatchGetFileContentsToolHandler(ToolHandler):
 
 class PeriodicNotesToolHandler(ToolHandler):
     def __init__(self):
-        super().__init__("obsidian_get_periodic_note")
+        super().__init__(TOOL_GET_PERIODIC_NOTE)
 
     def get_tool_description(self):
         return Tool(
             name=self.name,
-            description="Get current periodic note for the specified period.",
+            description="Retrieves the current time period's note from your Periodic Notes in Obsidian. For example, get today's daily note, this week's weekly note, or this month's monthly note. This is useful for accessing your current time-based notes.",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "period": {
                         "type": "string",
-                        "description": "The period type (daily, weekly, monthly, quarterly, yearly)",
+                        "description": "The type of periodic note you want to retrieve (daily = today's note, weekly = this week's note, etc.)",
                         "enum": ["daily", "weekly", "monthly", "quarterly", "yearly"]
                     }
                 },
@@ -406,30 +420,30 @@ class PeriodicNotesToolHandler(ToolHandler):
         
 class RecentPeriodicNotesToolHandler(ToolHandler):
     def __init__(self):
-        super().__init__("obsidian_get_recent_periodic_notes")
+        super().__init__(TOOL_GET_RECENT_PERIODIC_NOTES)
 
     def get_tool_description(self):
         return Tool(
             name=self.name,
-            description="Get most recent periodic notes for the specified period type.",
+            description="Retrieves a list of your most recent periodic notes of a specified type (e.g., the last several daily notes or weekly notes). Use this to review what you've been working on or thinking about over the past days, weeks, or months.",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "period": {
                         "type": "string",
-                        "description": "The period type (daily, weekly, monthly, quarterly, yearly)",
+                        "description": "The type of periodic notes you want to retrieve (e.g., daily notes, weekly notes, etc.)",
                         "enum": ["daily", "weekly", "monthly", "quarterly", "yearly"]
                     },
                     "limit": {
                         "type": "integer",
-                        "description": "Maximum number of notes to return (default: 5)",
+                        "description": "How many recent notes to return (default: 5, maximum: 50)",
                         "default": 5,
                         "minimum": 1,
                         "maximum": 50
                     },
                     "include_content": {
                         "type": "boolean",
-                        "description": "Whether to include note content (default: false)",
+                        "description": "Whether to include the full text of each note (true) or just metadata (false, default)",
                         "default": False
                     }
                 },
@@ -466,25 +480,25 @@ class RecentPeriodicNotesToolHandler(ToolHandler):
         
 class RecentChangesToolHandler(ToolHandler):
     def __init__(self):
-        super().__init__("obsidian_get_recent_changes")
+        super().__init__(TOOL_GET_RECENT_CHANGES)
 
     def get_tool_description(self):
         return Tool(
             name=self.name,
-            description="Get recently modified files in the vault.",
+            description="Retrieves a list of files that have been recently modified in your Obsidian vault, sorted by modification date. This is useful for seeing what you've been working on lately or finding notes you recently updated.",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "limit": {
                         "type": "integer",
-                        "description": "Maximum number of files to return (default: 10)",
+                        "description": "Maximum number of recently modified files to return (default: 10, maximum: 100)",
                         "default": 10,
                         "minimum": 1,
                         "maximum": 100
                     },
                     "days": {
                         "type": "integer",
-                        "description": "Only include files modified within this many days (default: 90)",
+                        "description": "Only include files modified within this many days in the past (default: 90 days)",
                         "minimum": 1,
                         "default": 90
                     }
